@@ -14,8 +14,7 @@ void entry(void);
 static inline uint64_t rdtsc(void) {
   uint32_t edx;  /* top 32 bits of timestamp */
   uint32_t eax;  /* bottom 32 bits of timestamp */
-  uint32_t ecx;  /* processor ID */
-  __asm__ volatile("rdtscp" : "=d"(edx), "=a"(eax), "=c"(ecx));
+  __asm__ volatile("rdtsc" : "=d"(edx), "=a"(eax));
   return (((uint64_t) edx) << 32) | eax;
 }
 
