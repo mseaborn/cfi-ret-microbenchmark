@@ -17,13 +17,13 @@
 
 # Proposed new sandboxing.
 print r"""
-__asm__(".global leaf; leaf: pop %eax; xchg %ecx, %esp; ret");
+__asm__(".global leaf; leaf: xchg %ecx, %esp; ret");
 
 #define DO_CALL __asm__("\
 mov $1f, %ecx; \
 call leaf; \
 0:; \
-mov %ecx, %esp; \
+lea 4(%ecx), %esp; \
 .data; \
 1: .long 0b; \
 .text")
