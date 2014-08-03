@@ -3,12 +3,6 @@
 #include <stdio.h>
 
 
-//void leaf(void) {}
-//__asm__(".global leaf; leaf: pop %ecx; jmp *%ecx");
-//__asm__(".global leaf; leaf: ret");
-__asm__(".global leaf; leaf: pop %eax; xchg %ecx, %esp; ret");
-
-
 void entry(void);
 
 static inline uint64_t rdtsc(void) {

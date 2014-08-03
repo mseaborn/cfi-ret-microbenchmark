@@ -1,11 +1,24 @@
 
-print 'void leaf(void);'
+# # Standard unsandboxed calling sequence.
+# print r"""
+# __asm__(".global leaf; leaf: ret");
+# #define DO_CALL __asm__("call leaf\n")
+# """
 
+# print r"""
+# // naclret
+# __asm__(".global leaf; leaf: pop %ecx; jmp *%ecx");
+
+# // Standard call (as used by NaCl)
+# #define DO_CALL __asm__("call leaf\n")
+# // PNaCl call
+# //#define DO_CALL __asm__("push $0f; jmp leaf; 0:\n")
+# """
+
+# Proposed new sandboxing.
 print r"""
-//#define DO_CALL __asm__("push $0f; jmp leaf; 0:\n")
-//#define DO_CALL __asm__("call leaf\n")
-"""
-print """
+__asm__(".global leaf; leaf: pop %eax; xchg %ecx, %esp; ret");
+
 #define DO_CALL __asm__("\
 mov $1f, %ecx; \
 call leaf; \
