@@ -13,9 +13,9 @@ print """
 mov $1f, %ecx; \
 call leaf; \
 0:; \
-mov %rcx, %rsp; \
+mov %ecx, %esp; \
 .data; \
-1: .quad 0b; \
+1: .long 0b; \
 .text")
 """
 
