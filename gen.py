@@ -17,19 +17,21 @@
 
 # Proposed new sandboxing.
 print r"""
-__asm__(".global leaf; leaf: xchg %ecx, %esp; ret");
+__asm__(".global leaf; leaf: mov %ecx, %esp; andl $0xfffffff & (~3), %esp; ret");
 
 #define DO_CALL __asm__("\
+mov %ebp, %esp; \
 mov $1f, %ecx; \
 call leaf; \
 0:; \
-lea 4(%ecx), %esp; \
 .data; \
 1: .long 0b; \
 .text")
 """
 
 print 'void entry(void) {'
+print '__asm__("push %ebp; mov %esp, %ebp");'
 for _ in range(100):
     print '  DO_CALL;'
+print '__asm__("mov %ebp, %esp; pop %ebp");'
 print '}'
