@@ -1,37 +1,50 @@
 
-# # Standard unsandboxed calling sequence.
-# print r"""
-# __asm__(".global leaf; leaf: ret");
-# #define DO_CALL __asm__("call leaf\n")
-# """
+fh_asm = open('out/asm.S', 'w')
+tests = []
 
-# print r"""
-# // naclret
-# __asm__(".global leaf; leaf: pop %ecx; jmp *%ecx");
 
-# // Standard call (as used by NaCl)
-# #define DO_CALL __asm__("call leaf\n")
-# // PNaCl call
-# //#define DO_CALL __asm__("push $0f; jmp leaf; 0:\n")
-# """
+def PutLabel(label):
+  fh_asm.write('.global %s\n' % label)
+  fh_asm.write('%s:\n' % label)
 
-# Proposed new sandboxing.
-print r"""
-__asm__(".global leaf; leaf: mov %ecx, %esp; andl $0xfffffff & (~3), %esp; ret");
 
-#define DO_CALL __asm__("\
-mov %ebp, %esp; \
-mov $1f, %ecx; \
-call leaf; \
-0:; \
-.data; \
-1: .long 0b; \
-.text")
-"""
+def EmitTest(name, func_asm, caller_asm):
+  leaf = 'leaf_%s' % name
+  PutLabel(leaf)
+  fh_asm.write(func_asm + '\n')
 
-print 'void entry(void) {'
-print '__asm__("push %ebp; mov %esp, %ebp");'
-for _ in range(100):
-    print '  DO_CALL;'
-print '__asm__("mov %ebp, %esp; pop %ebp");'
-print '}'
+  caller = 'caller_%s' % name
+  PutLabel(caller)
+  caller_asm = caller_asm.replace('DEST', leaf)
+  for i in xrange(100):
+    fh_asm.write(caller_asm + '\n')
+  fh_asm.write('ret\n')
+
+  tests.append(name)
+
+
+def EmitCCode():
+  fh = open('out/runner.c', 'w')
+  fh.write('void run_test(const char *name, void (*func)(void));\n')
+  for name in tests:
+    fh.write('void caller_%s(void);\n' % name)
+  fh.write('void run_tests(void) {\n')
+  for name in tests:
+    fh.write('  run_test("%s", caller_%s);\n' % (name, name))
+  fh.write('}\n')
+  fh.close()
+
+
+EmitTest('unsandboxed', 'ret', 'call DEST')
+
+EmitTest('nacl', 'pop %ecx; jmp *%ecx', 'call DEST')
+
+EmitTest('pnacl', 'pop %ecx; jmp *%ecx', 'push $0f; jmp DEST; 0:')
+
+EmitTest('new',
+         'xchg %ecx, %esp; ret',
+         ('mov $1f, %ecx; call DEST; 0: lea 4(%ecx), %esp; '
+          '.data; 1: .long 0b; .text'))
+
+EmitCCode()
+fh_asm.close()

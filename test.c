@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 
-void entry(void);
+void run_tests(void);
 
 static inline uint64_t rdtsc(void) {
   uint32_t edx;  /* top 32 bits of timestamp */
@@ -15,20 +15,18 @@ static inline uint64_t rdtsc(void) {
 const int calls = 100;
 const int iterations = 10000;
 
-int time_it(void) {
+void run_test(const char *name, void (*func)(void)) {
   uint64_t t0 = rdtsc();
   int i = 0;
   for (i = 0; i < iterations; i++)
-    entry();
+    func();
   uint64_t t1 = rdtsc();
-  return t1 - t0;
+  uint64_t cycles = t1 - t0;
+  printf("test %-20s cycles %.3f\n",
+         name, (double) cycles / (calls * iterations));
 }
 
 int main(void) {
-  int i;
-  for (i = 0; i < 20; i++) {
-    int cycles = time_it();
-    printf("cycles %.3f\n", (double) cycles / (calls * iterations));
-  }
+  run_tests();
   return 0;
 }
