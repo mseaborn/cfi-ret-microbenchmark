@@ -9,16 +9,18 @@ def PutLabel(label):
   fh_asm.write('%s:\n' % label)
 
 
-def EmitTest(name, func_asm, caller_asm):
+def EmitTest(name, func_asm, caller_asm, prologue='', epilogue=''):
   leaf = 'leaf_%s' % name
   PutLabel(leaf)
   fh_asm.write(func_asm + '\n')
 
   caller = 'caller_%s' % name
   PutLabel(caller)
+  fh_asm.write(prologue + '\n')
   caller_asm = caller_asm.replace('DEST', leaf)
   for i in xrange(100):
     fh_asm.write(caller_asm + '\n')
+  fh_asm.write(epilogue + '\n')
   fh_asm.write('ret\n')
 
   tests.append(name)
@@ -52,10 +54,25 @@ EmitTest('pnacl_noalign', 'pop %ecx; jmp *%ecx', 'push $0f; jmp DEST; 0:')
 EmitTest('pnacl', 'pop %ecx; andl $~31, %ecx; jmp *%ecx',
          'push $0f; jmp DEST; .p2align 5; 0:')
 
-EmitTest('new',
+# Defines label "1".
+SAVE_ADDR = '.data; 1: .long 0f; .text; 0:'
+
+# ecx_after = esp_before + 4.
+EmitTest('new_nomask',
          'xchg %ecx, %esp; ret',
-         ('mov $1f, %ecx; call DEST; 0: lea 4(%ecx), %esp; '
-          '.data; 1: .long 0b; .text'))
+         'mov $1f, %ecx; call DEST; '+SAVE_ADDR+' lea 4(%ecx), %esp')
+
+EmitTest('new',
+         'xchg %ecx, %esp; andl $((1<<31) - 1) & ~3, %esp; ret',
+         'mov $1f, %ecx; call DEST; '+SAVE_ADDR+' lea 4(%ecx), %esp')
+
+# In this version, the callee clobbers %esp and does not save it into
+# another register.
+EmitTest('new_callee_save_esp',
+         'mov %ecx, %esp; andl $((1<<31) - 1) & ~3, %esp; ret',
+         'mov %ebp, %esp; mov $1f, %ecx; call DEST; '+SAVE_ADDR,
+         prologue='push %ebp; mov %esp, %ebp',
+         epilogue='mov %ebp, %esp; pop %ebp')
 
 EmitCCode()
 fh_asm.close()
