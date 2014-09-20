@@ -13,11 +13,16 @@ static inline uint64_t rdtsc(void) {
 }
 
 const int calls = 100;
-const int iterations = 10000;
+const int iterations = 100000;
 
 void run_test(const char *name, void (*func)(void)) {
+  int i;
+
+  /* Attempt to warm up first before measuring. */
+  for (i = 0; i < iterations; i++)
+    func();
+
   uint64_t t0 = rdtsc();
-  int i = 0;
   for (i = 0; i < iterations; i++)
     func();
   uint64_t t1 = rdtsc();

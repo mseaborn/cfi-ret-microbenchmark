@@ -5,6 +5,7 @@ tests = []
 
 def PutLabel(label):
   fh_asm.write('.global %s\n' % label)
+  fh_asm.write('.p2align 5\n')
   fh_asm.write('%s:\n' % label)
 
 
@@ -37,9 +38,19 @@ def EmitCCode():
 
 EmitTest('unsandboxed', 'ret', 'call DEST')
 
-EmitTest('nacl', 'pop %ecx; jmp *%ecx', 'call DEST')
+EmitTest('nacl_noalign', 'pop %ecx; jmp *%ecx', 'call DEST')
+EmitTest('nacl_jmpfill',
+         'pop %ecx; andl $~31, %ecx; jmp *%ecx',
+         'jmp 1f; .fill 32-5-2, 1, 0x90; 1: call DEST')
+EmitTest('nacl_longnopfill',
+         'pop %ecx; andl $~31, %ecx; jmp *%ecx',
+         (r'.ascii "\x66\x66\x66\x2e\x0f\x1f\x84\x00\x00\x00\x00\x00"; '
+          r'.ascii "\x66\x66\x66\x66\x66\x66\x2e\x0f\x1f\x84\x00\x00\x00\x00\x00"; '
+          'call DEST'))
 
-EmitTest('pnacl', 'pop %ecx; jmp *%ecx', 'push $0f; jmp DEST; 0:')
+EmitTest('pnacl_noalign', 'pop %ecx; jmp *%ecx', 'push $0f; jmp DEST; 0:')
+EmitTest('pnacl', 'pop %ecx; andl $~31, %ecx; jmp *%ecx',
+         'push $0f; jmp DEST; .p2align 5; 0:')
 
 EmitTest('new',
          'xchg %ecx, %esp; ret',
