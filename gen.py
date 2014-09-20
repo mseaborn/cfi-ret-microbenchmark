@@ -31,10 +31,11 @@ def EmitCCode():
   fh.write('#include "test.h"\n')
   for name in tests:
     fh.write('void caller_%s(void);\n' % name)
-  fh.write('void run_tests(void) {\n')
+  fh.write('struct test_info g_tests[] = {\n')
   for name in tests:
-    fh.write('  run_test("%s", caller_%s);\n' % (name, name))
-  fh.write('}\n')
+    fh.write('  { "%s", caller_%s },\n' % (name, name))
+  fh.write('};\n')
+  fh.write('int g_test_count = %i;\n' % len(tests))
   fh.close()
 
 

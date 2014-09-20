@@ -15,23 +15,25 @@ static inline uint64_t rdtsc(void) {
 const int calls = 100;
 const int iterations = 100000;
 
-void run_test(const char *name, void (*func)(void)) {
+void run_test(struct test_info *test) {
   int i;
 
   /* Attempt to warm up first before measuring. */
   for (i = 0; i < iterations; i++)
-    func();
+    test->test_func();
 
   uint64_t t0 = rdtsc();
   for (i = 0; i < iterations; i++)
-    func();
+    test->test_func();
   uint64_t t1 = rdtsc();
   uint64_t cycles = t1 - t0;
   printf("test %-20s cycles %.3f\n",
-         name, (double) cycles / (calls * iterations));
+         test->test_name, (double) cycles / (calls * iterations));
 }
 
 int main(void) {
-  run_tests();
+  int i;
+  for (i = 0; i < g_test_count; i++)
+    run_test(&g_tests[i]);
   return 0;
 }
