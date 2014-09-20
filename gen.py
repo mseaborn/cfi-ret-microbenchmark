@@ -28,7 +28,7 @@ def EmitTest(name, func_asm, caller_asm, prologue='', epilogue=''):
 
 def EmitCCode():
   fh = open('out/runner.c', 'w')
-  fh.write('void run_test(const char *name, void (*func)(void));\n')
+  fh.write('#include "test.h"\n')
   for name in tests:
     fh.write('void caller_%s(void);\n' % name)
   fh.write('void run_tests(void) {\n')

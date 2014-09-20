@@ -2,8 +2,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "test.h"
 
-void run_tests(void);
 
 static inline uint64_t rdtsc(void) {
   uint32_t edx;  /* top 32 bits of timestamp */
